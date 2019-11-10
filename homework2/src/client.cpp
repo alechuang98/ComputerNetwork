@@ -8,6 +8,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/select.h>
+#include <sys/stat.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <arpa/inet.h>
@@ -118,6 +119,8 @@ void streamHandler(node &cli, int fd){
 }
 
 int main(int argc, char *argv[]){
+	mkdir(CLIENT_DIR, 0777);
+	chdir(CLIENT_DIR);
 	char *ip = strtok(argv[1], ":");
 	char *port = strtok(NULL, ":");
 	int sock_fd = initClient(ip, atoi(port));
@@ -133,8 +136,8 @@ int main(int argc, char *argv[]){
 			continue;
 		}
 		int space_count = count(cmd.begin(), cmd.end(), ' ');
-		if(space_count > 1 || (space_count == 0 && cmd != "ls") &&
-			space_count >= 1 && cmd.substr(0, 2) == "ls"){
+		if(space_count > 1 || (space_count == 0 && cmd != "ls") ||
+			(space_count >= 1 && cmd.substr(0, 2) == "ls")){
 			puts("Command format error.");
 			continue;
 		}
@@ -157,7 +160,7 @@ int main(int argc, char *argv[]){
 			client.size = 0;
 			strcpy(file_name, cmd.substr(4).c_str());
 			if(access(file_name, F_OK) == -1){
-				printf("The %s doesn't exist.\n", file_name);
+				printf("The '%s' doesn't exist.\n", file_name);
 			} else {
 				writer(sock_fd, buf, HEADER_SIZE);
 				client.fp = fopen(file_name, "rb");

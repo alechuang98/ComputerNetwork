@@ -8,6 +8,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/select.h>
+#include <sys/stat.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <arpa/inet.h>
@@ -26,11 +27,11 @@ void reader(int fd, char *buf, int size){
 		int res = recv(fd, buf + p, size - sizeof(char) * p, 0);
 		p += res;
 	}
-	printf("in: %d\n", p);
+	printf("in  %d bytes\n", p);
 }
 void writer(int fd, char *buf, int size){
 	int p = 0;
-	printf("out %d\n", size);
+	printf("out %d bytes\n", size);
 	while(p < size){
 		int res = send(fd, buf + p, size - sizeof(char) * p, 0);
 		p += res;
@@ -88,7 +89,7 @@ void setFdSet(fd_set *r_fd_set, fd_set *w_fd_set, node *client){
 char buf[MAX_BUF], file_name[HEADER_SIZE];
 void cmdHandler(node &cli, int fd){
 	reader(fd, buf, HEADER_SIZE);
-	printf("get cmd from %d. command is %s\n", fd, buf);
+	printf("get cmd from %d. Command is %s\n", fd, buf);
 	string cmd = string(buf);
 	if(cmd == "ls"){
 		cli.state = LS;
@@ -97,7 +98,7 @@ void cmdHandler(node &cli, int fd){
 		printf("file_name: %s\n", file_name);
 		if(access(file_name, F_OK) == -1){
 			puts("NO exist");
-			sprintf(buf, "The %s doesn't exist.", file_name);
+			sprintf(buf, "The '%s' doesn't exist.", file_name);
 			writer(fd, buf, HEADER_SIZE);
 			return;
 		}
@@ -114,12 +115,12 @@ void cmdHandler(node &cli, int fd){
 	} else if(cmd.substr(0, 5) == "play "){
 		strcpy(file_name, cmd.substr(5).c_str());
 		if(access(file_name, F_OK) == -1){
-			sprintf(buf, "The %s doesn't exist.", file_name);
+			sprintf(buf, "The '%s' doesn't exist.", file_name);
 			writer(fd, buf, HEADER_SIZE);
 			return;
 		}
 		if(cmd.substr(cmd.length() - 4) != ".mpg"){
-			sprintf(buf, "The %s is not a mpg file.", file_name);
+			sprintf(buf, "The '%s' is not a mpg file.", file_name);
 			writer(fd, buf, HEADER_SIZE);
 			return;
 		}
@@ -158,7 +159,7 @@ void downloadHandler(node &cli, int fd){
 	cli.size -= min(BUF_SIZE, cli.size);
 	if(cli.size == 0){
 		cli.state = CMD;
-		printf("finish download %d\n", fd);
+		printf("finish download to %d\n", fd);
 		fclose(cli.fp);
 		return;
 	}
@@ -200,6 +201,8 @@ void lsHandler(node &cli, int fd){
 	}
 }
 int main(int argc, char *argv[]){
+	mkdir(SERVER_DIR, 0777);
+	chdir(SERVER_DIR);
 	int sock_fd = initServer(atoi(argv[1]));
 	node client[MAX_FD];
 	client[sock_fd].state = CMD;
