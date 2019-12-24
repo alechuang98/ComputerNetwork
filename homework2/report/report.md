@@ -62,3 +62,9 @@ Note over Server: Change the status tag of client to default
 ### Problem 4
 
 blocking I/O 不等於 synchronized I/O。
+
+假設老闆(Process)請一位員工(Kernel)處理一份文件。
+
+老闆是否要等員工而能不能做其他事是blocking or non-blocking。
+
+而員工在處理文件時能不能做其他事還是要持續匯報情況是synchronized or asynchronized。
